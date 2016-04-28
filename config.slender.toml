@@ -1,0 +1,26 @@
+baseurl = "http://blog.idempotent.ca"
+languageCode = "en-us"
+title = "Qiu's Quibble"
+[author]
+    name = "Kevin J. Qiu"
+[permalinks]
+    page = "/:title/"
+    post = "/:year/:month/:day/:title/"
+[params]
+    colorscheme = "blue"  # for slender
+    tagline = "Blog about nothing and everything"
+    footer = "Copyright 2016 &copy; Kevin J. Qiu"
+    email = "mailto:kevin@idempotent.ca"
+    github = "https://github.com/kevinjqiu"
+    twitter = "https://twitter.com/kevinjqiu"
+[menu]
+    [[menu.main]]
+    identifier = "home"
+    name       = "home"
+    url        = "/"
+    weight     = 0
+    [[menu.main]]
+    identifier = "about"
+    name       = "about"
+    url        = "/about/"
+    weight     = 1

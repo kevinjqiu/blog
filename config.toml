@@ -1,3 +1,27 @@
 baseurl = "http://blog.idempotent.ca"
 languageCode = "en-us"
 title = "Qiu's Quibble"
+[author]
+    name = "Kevin J. Qiu"
+[permalinks]
+    page = "/:title/"
+    post = "/:year/:month/:day/:title/"
+[params]
+    sidebartitle = "Qiu's Quibble"
+    sidebartagline = "Blog about nothing and everything"
+    email = "mailto:kevin@idempotent.ca"
+[menu]
+    [[menu.main]]
+    name       = "about"
+    url        = "/about/me/"
+    [[menu.main]]
+    name       = "starred posts"
+    url        = "/starred/"
+    [[menu.social]]
+    identifier = "twitter"
+    url        = "https://twitter.com/kevinjqiu"
+    pre        = "<i class='fa fa-twitter'></i>"
+    [[menu.social]]
+    identifier = "github"
+    url        = "https://github.com/kevinjqiu"
+    pre        = "<i class='fa fa-github'></i>"
