@@ -7,3 +7,7 @@
                 |___/                         |_|                                       
 ```
 
+Build and publish
+=================
+
+    bin/build.sh
