@@ -1,6 +1,8 @@
 baseurl = "http://blog.idempotent.ca"
 languageCode = "en-us"
 title = "Qiu's Quibble"
+disqusShortname = "idempotentca"
+
 [author]
     name = "Kevin J. Qiu"
 [permalinks]
