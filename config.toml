@@ -2,7 +2,6 @@ baseurl = "http://blog.idempotent.ca"
 languageCode = "en-us"
 title = "Qiu's Quibble"
 disqusShortname = "idempotentca"
-googleAnalytics = "UA-62238742-2"
 
 [author]
     name = "Kevin J. Qiu"
@@ -13,6 +12,7 @@ googleAnalytics = "UA-62238742-2"
     sidebartitle = "Qiu's Quibble"
     sidebartagline = "Blog about nothing and everything"
     email = "mailto:kevin@idempotent.ca"
+    gaid = "UA-62238742-2"
 [menu]
     [[menu.main]]
     name       = "about"
