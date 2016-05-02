@@ -61,6 +61,11 @@ I do get some value out of the show but it's not known for its depth.
 Turing-InComplete
 =================
 
+**link:** [http://turing.cool/](http://turing.cool/)
+**Frequency:** No fixed schedule
+
+This is mostly a talk show among 4 software engineer friends. They have a good diversity: frontend/backend, devops, contractor and so on. They are all enthusiastic about software. The most I get out of the show is inspiration. They're always experimenting with new technology: elixir, clojurescript, new hashicorp tools etc. Listening to their podcast makes me want to learn and be a better software engineer. In the first dozen of episodes, they have a single topic for each show such as TDD, code review, pair programming etc, but as time goes on, the show becomes a grabbag of everything and it gets chatty without a ton of substance. It's a casual conversation among friends having fun, and I guess that could be viewed as a strength.
+
 FullStack Radio
 ===============
 
