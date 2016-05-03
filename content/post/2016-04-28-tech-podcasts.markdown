@@ -61,19 +61,47 @@ I do get some value out of the show but it's not known for its depth.
 Turing-InComplete
 =================
 
+{{< figure src="/images/turing.png" >}}
 **link:** [http://turing.cool/](http://turing.cool/)
 **Frequency:** No fixed schedule
 
 This is mostly a talk show among 4 software engineer friends. They have a good diversity: frontend/backend, devops, contractor and so on. They are all enthusiastic about software. The most I get out of the show is inspiration. They're always experimenting with new technology: elixir, clojurescript, new hashicorp tools etc. Listening to their podcast makes me want to learn and be a better software engineer. In the first dozen of episodes, they have a single topic for each show such as TDD, code review, pair programming etc, but as time goes on, the show becomes a grabbag of everything and it gets chatty without a ton of substance. It's a casual conversation among friends having fun, and I guess that could be viewed as a strength.
 
-FullStack Radio
-===============
+Talk Python to Me
+=================
+
+{{< figure src="/images/talkpython.jpg" >}}
+**link:** [https://talkpython.fm/](https://talkpython.fm/)
+**Frequency:** weekly
+
+This is a Python-specific podcast hosted by Michael Kennedy. Being primarily a Python developer, I followed the podcast since its infancy. The show started off with a couple really strong interviews with interviewees like Mike Bayer, Kenneith Reitz, Armin Ronacher and David Beazley. The show has good depth, although sometimes it could be a bit stronger. There are gems like the one [episode](https://talkpython.fm/episodes/show/22/cpython-internals-and-learning-python-with-pythontutor.com) with Philip Guo which lead me to Philip's excellent CPython internals video series. Overall, a really solid podcast.
+
+Podcast.\_\_init\_\_
+====================
+
+{{< figure src="/images/podcast_init_logo.png" >}}
+**link:** [http://podcastinit.com/](http://podcastinit.com/)
+**Frequency:** weekly
+
+Another Python specific podcast started around the same time as Talk Python to Me. Another solid show and I do find it's a little bit more in-depth than TalkPython but it might just be my impression.
 
 Scale Your Code
 ===============
 
-Talk Python to Me
-=================
+{{< figure src="/images/scaleyourcode.jpg" >}}
+**link:** [https://scaleyourcode.com/](https://scaleyourcode.com/)
+**Frequency:** semi-monthly
 
-Podcast.\_\_init\_\_
-====================
+I learned about this podcast on an [episode](http://softwareengineeringdaily.com/2016/04/27/scale-code-christophe-limpalair/) of another podcast software engineering daily. The host Christophe Limpalair is a super energetic and passionate guy. It's inspiring to hear his journey. I've only discovered it not too long ago, but the topics are very relevant to what I do and what I interest in. I can't wait to dive into its archive of back episodes.
+
+FullStack Radio
+===============
+
+{{< figure src="/images/fullstack.jpg" >}}
+**link:** [http://www.fullstackradio.com/](http://www.fullstackradio.com/)
+**Frequency:** semi-monthly
+
+Another podcast I discovered recently. I've only listened to one [episode](http://www.fullstackradio.com/38) so far but I'm very impressed by the depth of the show. It's like listening to a technical discussion between two colleagues.
+
+
+What are your favourite or most often listened to software podcasts?
