@@ -1,6 +1,6 @@
 +++
 date = "2016-04-28T22:12:59-04:00"
-draft = true
+draft = false
 title = "Software Engineering Podcasts Review"
 categories = ["podcast"]
 
@@ -101,7 +101,7 @@ FullStack Radio
 **link:** [http://www.fullstackradio.com/](http://www.fullstackradio.com/)
 **Frequency:** semi-monthly
 
-Another podcast I discovered recently. I've only listened to one [episode](http://www.fullstackradio.com/38) so far but I'm very impressed by the depth of the show. It's like listening to a technical discussion between two colleagues.
+Another podcast I discovered recently. I've only listened to one [episode](http://www.fullstackradio.com/38) so far but I'm very impressed by the depth of the show. It's like listening to a technical discussion between two colleagues. The host is not simply an echoing chamber but he's able to provide many counter points, such as discussion about trade-offs. Great stuff!
 
 
 What are your favourite or most often listened to software podcasts?
