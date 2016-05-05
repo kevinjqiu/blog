@@ -6,6 +6,9 @@ categories = ["podcast"]
 
 +++
 
+UPDATE: I've got a lot of great comments here and on [reddit](https://redd.it/4hycnz). Thanks everyone for the suggestions.
+
+
 As software developers, we need to always keep learning and keep ourselves up-to-date with what's happening in the industry. Listening to podcasts is a great way to do so for myself since I have a 2-hour commute every day. In this blog post I'm going to review software engineering podcasts that I frequently listen to and hopefully this post will be remotely useful to anyone looking for software podcasts.
 
 Disclaimer
@@ -35,6 +38,16 @@ Software Engineering Radio
 **Frequency:** Semi-monthly
 
 This is one of the first podcasts I subscribed to. It's published by IEEE computer society so it has a high profile. Sometimes the show gets a little too academic that it disconnects with what programmers do on a day-to-day basis. Don't get me wrong, this is an awesome show, and very insightful. However, depending on the topics or the guests, you may or may not get as much out of the show. That said, however, this is still a very solid show with interesting topics and in-depth discussions.
+
+The Changelog
+=============
+
+{{< figure src="/images/the-changelog.svg" >}}
+
+**Link:** [https://changelog.com/](https://changelog.com/)
+**Frequency:** weekly-ish
+
+I've been following thechangelog show from its infancy. The show was on hiatus for a while but since they're are back a few years ago, they've been in full gear, putting together tons of excellent interviews. Its primary focus is on open source projects and have put lots of interesting projects on my tech radar, including Golang and Docker. The depth of the show has been improving as well, and show is not just "hey there's this project you probably haven't heard about but you should". The hosts are able to ask some insightful questions and the guests are usually able to provide detailed answers. I also like the show for the fact that you can open suggestions via [github issue link](https://github.com/thechangelog/ping).
 
 Security Now
 ============
