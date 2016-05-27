@@ -28,3 +28,7 @@ disqusShortname = "idempotentca"
     identifier = "github"
     url        = "https://github.com/kevinjqiu"
     pre        = "<i class='fa fa-github'></i>"
+    [[menu.social]]
+    identifier = "rss"
+    url        = "http://blog.idempotent.ca/index.xml"
+    pre        = "<i class='fa fa-rss'></i>"
