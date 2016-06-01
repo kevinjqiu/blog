@@ -253,3 +253,108 @@ A safer approach is to use block initialization:
     => [2]
 
 [Block](http://rubylearning.com/satishtalim/ruby_blocks.html) is one of my favourite Ruby language features.
+
+
+Strings
+=======
+
+Strings are similar in both languages, except Ruby strings are mutable, while Pythons' are immutable. Ruby also has more ways to escape quotes:
+
+    irb(main):051:0> %(I can use ' and " here no problem)
+    => "I can use ' and \" here no problem"
+
+    irb(main):052:0> %!and here '"!
+    => "and here '\""
+
+    irb(main):053:0> %{or here '"}
+    => "or here '\""
+
+    irb(main):054:0> %{multi
+    irb(main):055:0" line
+    irb(main):056:0" strings%}
+    => "multi\nline\nstrings%"
+
+You can use regex as string index to extract the matched substring:
+
+    irb(main):065:0> "j'ai 34 ans"[/\d+/]
+    => "34"
+
+Symbols
+=======
+
+Symbols are a unique in Ruby that's not present in Python (although I wish). It has permeated into the design of other modern languages, like Clojure and Elixir. You can think of symbols as a way to do free-form enums, a way to name something, as oppose to just some free form texts.
+
+You can get all symbols in the current scope:
+
+    irb(main):060:0> Symbol.all_symbols
+    [... long list of global symbols ...]
+
+You can use symbols to refer to functions:
+
+    irb(main):062:0> ''.respond_to? :to_i
+    => true
+
+You can dynamically create a symbol from strings:
+
+    irb(main):063:0> 'abc'.to_sym
+    => :abc
+
+Methods
+=======
+
+Default values
+--------------
+
+Same as Python:
+
+    def foo(a, b='default') 
+
+Variadic arguments
+------------------
+
+Same as Python:
+
+    def foo(a, *c)
+
+Inside the method, `c` is available as an `Array`.
+
+Invocation and Return
+---------------------
+
+Ruby method invocation does not require parentheses, unless it's it results in ambiguity. e.g., you can omit parens in:
+
+    def foo(arg)
+      ...
+    end
+
+    foo :bar
+
+but you have to use parens to disambiguate in situations like:
+
+    def foo(arg)
+    end
+
+    def bar(arg)
+    end
+
+    bar(foo arg)
+
+In Python, parens are mandatory.
+
+In Ruby, almost everything is an expression. In the case of a method definition, the last expression becomes the return value of the method. Some people call it implicit returns, and people have mixed feelings about it. Personally I like the everything-is-an-expression model and using the last expression as the return value feels natural. In Python, you have to use `return`, otherwise, it implicitly returns `None`.
+
+Keyword arguments
+-----------------
+
+Ruby 1.x doesn't have keyword arguments as a language feature. This is a little disappointing. However, it's idiomatic in Ruby to have a method accept a hash, and use symbols to simulate keyword arguments:
+
+    irb(main):068:0> def foo(args)
+    irb(main):069:1>   puts args
+    irb(main):070:1> end
+    => :foo
+    irb(main):071:0> foo(a: 5, b: 6)
+    {:a=>5, :b=>6}
+
+Since you can omit `{}` in Hash construction, this code is almost like Python's keyword arguments. However, you have to do argument validation yourself.
+
+In Ruby 2.x, this pattern has been elevated as a language feature, so now Ruby has proper keyword argument support. However, I have not seen an equivalent of Python's [keyword-only argument](https://www.python.org/dev/peps/pep-3102/) feature.
