@@ -178,3 +178,78 @@ Both Languages support inline swapping:
     irb(main):037:0> b
     => 1
 
+Hashes
+======
+
+Ruby hashes are equivalent of Python dictionaries. They can be constructed and accessed using similar syntax.
+
+No `KeyError`
+-------------
+
+In Python, when accessing a key that doesn't exist in the dictionary, you get a `KeyError`:
+
+    >>> x={'a': 1}
+    >>> x['b']
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      KeyError: 'b'
+
+In Ruby, you simply get `nil`:
+
+    irb(main):038:0> a={:a => 1, :b => 2}
+    => {:a=>1, :b=>2}
+    irb(main):039:0> a[:c]
+    => nil
+
+However, doing a `fetch` will result in `KeyError` if it doesn't exist:
+
+    irb(main):040:0> a.fetch(:c)
+    KeyError: key not found: :c
+        from (irb):40:in `fetch'
+        from (irb):40
+        from /usr/bin/irb:11:in `<main>'
+
+Default value
+-------------
+
+In Ruby, default value functionality is built-in with `Hash` class:
+
+    irb(main):041:0> x=Hash.new([])
+    => {}
+    irb(main):042:0> x[:one]
+    => []
+
+In Python, we use `collections.defaultdict`:
+
+    >>> import collections
+    >>> x=collections.defaultdict(list)
+    >>> x["one"]
+    []
+
+Python's `defaultdict` is more flexible, allowing the default value be obtained via a callable. Maybe there's a way to achieve the same thing with Ruby but I haven't found it.
+
+Gotcha: The default value in Ruby's `Hash` though is shared among all instances:
+
+    irb(main):043:0> x=Hash.new([])
+    => {}
+    irb(main):044:0> x[:one] << "1"
+    => ["1"]
+    irb(main):045:0> x[:two] << "2"
+    => ["1", "2"]
+    irb(main):046:0> x[:two]
+    => ["1", "2"]
+
+This could lead to subtle bugs if not careful.
+
+A safer approach is to use block initialization:
+
+    irb(main):047:0> x=Hash.new { |hash, key| hash[key] = [] }
+    => {}
+    irb(main):048:0> x[:one] << 1
+    => [1]
+    irb(main):049:0> x[:two] << 2
+    => [2]
+    irb(main):050:0> x[:two]
+    => [2]
+
+[Block](http://rubylearning.com/satishtalim/ruby_blocks.html) is one of my favourite Ruby language features.
