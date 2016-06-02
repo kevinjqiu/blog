@@ -9,6 +9,7 @@ It's been 11 years since I first encountered Python, and it's been my favourite 
 This post is a summary of my journey learning Ruby as a seasoned Python developer, and my thoughts comparing these two popular languages.
 
 Disclaimer:
+
 * I'm by no means a Ruby expert. My understand of Ruby so far has been quite superficial.
 * Most of the points here are my notes while going through the excellent [Ruby Koan](http://rubykoans.com/) exercises. A big shout out to them!
 
