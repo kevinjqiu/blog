@@ -66,7 +66,7 @@ root@48b83d3621b5:/proc/1# cat cgroup
 Here the container id is `48b83...`.
 
 # Docker Security Best Practices
-## Building The Image
+## Secure the Containers
 ### Use minimal base images
 In a secured environment, every image you build has to come from a known and trusted source. The minimal the base image, the narrower the attack surface is going to be. [Alpine Linux](https://www.alpinelinux.org/) has gain significantly in popularity as it's a very minimal Linux distribution. I personally build almost everything from Alpine when I can. The caveat is it's built using [musl libc](https://www.musl-libc.org/) instead of the ubiquitous glibc so your mileage may vary depending on how your code or your dependency rely on specifics of glibc.
 
@@ -81,3 +81,23 @@ RUN apt-key adv \
     | tee /etc/apt/sources.list.d/example.list
 ```
 
+### Create read-only containers/volumes
+
+By default, `docker run ...` creates and runs a container in read-write mode. The process in the container is able to write to the root file system of the container. According to the [security principle of least privilege](https://en.wikipedia.org/wiki/Principle_of_least_privilege), if you don't expect the container process to write to the disk, you should run the container with `--read-only` flag.
+
+```
+$ docker run -it --rm --read-only alpine sh
+/ # touch foo
+touch: foo: Read-only file system
+```
+
+Same applies to moounted volumes. If you volume mount a folder from the host not for persistence (e.g., for configuration), you don't need write permission for the mapped folder. You can use `-v host_dir:container_dir:ro` to tell docker to mount the folder in read-only mode:
+
+```
+$ docker run -it --rm -v $(pwd):/content:ro alpine sh
+/ # cd /content
+/content # touch foo
+touch: foo: Read-only file system
+```
+
+## Networking
