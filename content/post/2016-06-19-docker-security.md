@@ -290,7 +290,39 @@ rm: can't remove '/mnt/bin/sh': Permission denied
 
 ### Use user namespace remapping
 
-Since Docker 1.10, Docker added support for user namespace for the docker daemon. With this feature, the container is able to run with the root user inside the container but an unprivileged user on the host.
+Since Docker 1.10, Docker added [support](https://integratedcode.us/2015/10/13/user-namespaces-have-arrived-in-docker/) for user namespace for the docker daemon. With this feature, the container is able to run with the root user inside the container but an unprivileged user on the host.
 
 Let's see an example. To activate it, we need to rerun the docker daemon with `--userns-remap` option.
 
+First, stop docker daemon:
+
+```
+systemctl stop docker.service
+```
+
+User namespace uses two config files `/etc/subuid` and `/etc/subgid`. See full description using `man subuid` and `man subgid`.
+
+Touch these files:
+
+```
+touch /etc/subuid && touch /etc/subgid
+```
+
+Run docker daemon:
+```
+$ sudo docker daemon --userns-remap=default
+[...]
+INFO[0001] User namespaces: ID ranges will be mapped to subuid/subgid ranges of: dockremap:dockremap
+```
+
+As you can see, user namespaces have been activated. Furthermore:
+
+```
+$ cat /etc/subuid
+dockremap:100000:65536
+
+$ cat /etc/subgid
+dockremap:100000:65536
+```
+
+What this means is the `dockremap` user is allocated a block of 65536 user/group ids. Container started henceforth will be using user `root` in the container, but to the host, it's going to be user `dockremap`'s subordinate users.
