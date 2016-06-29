@@ -101,3 +101,154 @@ touch: foo: Read-only file system
 ```
 
 ## Networking
+### Use network namespaces
+Containers can be "linked" by specifying `--link` during run. e.g., if your `app` container has a link to `redis` container, within your app container, you can use `redis` as the host name for the redis instance:
+
+```
+docker run -d --name redis redis:latest
+docker run -d --name app --link redis:redis app_image
+```
+
+However, this is considered a bad practice with the newer docker versions. Links do not survive a container restart, so if either the `redis` or the `app` container gets restarted, the linkage is gone and hence it's pretty brittle.
+
+Since docker 1.9, network is a top-level concept and is now a recommended way of connecting containers.
+
+```
+$ docker network create test
+704c22d89347f18ca1d369af02af5aa89b25a78b8fa0f243bef0978c7aa4fedf
+
+$ docker network ls
+NETWORK ID          NAME                DRIVER
+ab205c46f52f        bridge              bridge
+9ef569719a04        host                host
+29053ecdedda        none                null
+4e4f01be3f14        onebody_default     bridge
+704c22d89347        test                bridge
+```
+
+The network `test` we just created is not tied to any containers. The network is its own subnet under the docker0:
+
+```
+$ docker network inspect test
+[
+    {
+        "Name": "test",
+		...
+        "IPAM": {
+			...
+            "Config": [
+                {
+                    "Subnet": "172.19.0.0/16",
+                    "Gateway": "172.19.0.1/16"
+                }
+            ]
+        },
+		...
+    }
+]
+```
+
+A container can join the network by specifying `--network` during runtime:
+
+```
+$ docker run -it --net=test --rm --name app1 alpine sh
+/ # ifconfig eth0
+eth0      Link encap:Ethernet  HWaddr 02:42:AC:13:00:02
+          inet addr:172.19.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
+          inet6 addr: fe80::42:acff:fe13:2%32744/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:71 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:9 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:9084 (8.8 KiB)  TX bytes:738 (738.0 B)
+```
+
+You can see the container is assigned an IP address in the subnet. Let's run another container in the network, and take a look at the network:
+
+```
+$ docker network inspect test
+[
+    {
+        ...
+        "Containers": {
+            "aac7e82e2b89fc021606541ec46bd11b734bc4fd97296b2f343d622e8ccb6a49": {
+                "Name": "stupefied_albattani",
+                "EndpointID": "5213b7177348929fae12273c4ed6df6c5894bcfeef246b3fd6ee81789533153e",
+                "MacAddress": "02:42:ac:13:00:03",
+                "IPv4Address": "172.19.0.3/16",
+                "IPv6Address": ""
+            },
+            "e2d5d159dc1cbb1f671c01286138704128bbbf6f9c428605155dbe8b7df4de1f": {
+                "Name": "app1",
+                "EndpointID": "b8fb80f16e8b9d4ec53707fce4d7e49fc901b82f0d727d280fc859684cce1056",
+                "MacAddress": "02:42:ac:13:00:02",
+                "IPv4Address": "172.19.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        ...
+    }
+]
+
+```
+
+The name associated with the containers are accessible to other containers in the network:
+
+```
+$ docker run -it --rm --net=test alpine sh
+/ # ping app1
+PING app1 (172.19.0.2): 56 data bytes
+64 bytes from 172.19.0.2: seq=0 ttl=64 time=0.378 ms
+64 bytes from 172.19.0.2: seq=1 ttl=64 time=0.193 ms
+64 bytes from 172.19.0.2: seq=2 ttl=64 time=0.294 ms
+64 bytes from 172.19.0.2: seq=3 ttl=64 time=0.200 ms
+```
+
+However, if you start a container outside of the `test` network, none of the containers are going to be accessible:
+
+```
+$ docker run -it --rm --name outsider alpine sh
+/ # ping app1
+ping: bad address 'app1'
+/ # ping 172.19.0.2
+PING 172.19.0.2 (172.19.0.2): 56 data bytes
+^C
+--- 172.19.0.2 ping statistics ---
+4 packets transmitted, 0 packets received, 100% packet loss
+/ #
+```
+
+### Be cautious with `--net=host`
+
+I have to confess that I'm guilty of this :) When I have container connectivity issues, I slap on `--net=host` on `docker run` and everything just worked. This is a bad security practice as called out during the workshop. Because `--net=host` puts the container in the same network namespace as the host, the container can see *all* traffic on the host:
+
+```
+$ docker run -it --net=host alpine sh
+/ # ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: wlp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP qlen 1000
+    link/ether c8:ff:28:62:80:29 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.132/24 brd 192.168.1.255 scope global dynamic wlp1s0
+       valid_lft 78812sec preferred_lft 78812sec
+    inet 192.168.1.125/24 brd 192.168.1.255 scope global secondary wlp1s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::2475:8b1:aafd:3dde/64 scope link
+       valid_lft forever preferred_lft forever
+4: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN
+    link/ether 02:42:c8:75:9f:71 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.3/16 scope global docker0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::42:c8ff:fe75:9f71/64 scope link
+       valid_lft forever preferred_lft forever
+```
+
+As demonstrated above, all interfaces on the host is visible inside the container.
+
+### Be cautious with exposed ports
+
+When you're connecting containers together with network namespace, you don't need to bind the container port to the host port with the `-p` option. Exposed ports may create conflict with port bindings on the host. However, if your container is the entrypoint to your web app, then I can't think of a specific reason *not* to use port binding, since otherwise, you will have to setup iptable rules to route traffic from the host interface to container IP.
