@@ -9,8 +9,9 @@ categories = ["docker", "security"]
 
 In order to talk about security, we first have to know how docker works on a higher level to know what to secure. The workshop addresses that question early on. Container security is different from, say, securing a hypervisor, since they work differently. Docker is essentially an abstraction layer on top of [namespaces](http://man7.org/linux/man-pages/man7/namespaces.7.html) and [cgroups](https://en.wikipedia.org/wiki/Cgroups) so we have to talk about security in those contexts. On a higher level, namespaces govern what a container can see, and cgroups govern what a container can use.
 
-# Namespaces
+# Docker Internals
 
+## Namespaces
 When forking a child process on Linux, you can specify what system resource is shared from the parent process and what is "unshared", and the "unshared" resource becomes the namespace isolation provided by the kernel to the process. Such resources are:
 * mount
 * UTS
@@ -38,7 +39,7 @@ lrwxrwxrwx 1 root root 0 Jun 28 03:56 uts -> uts:[4026532439]
 
 and if you are within a container, can you find out the container id by querying `/proc/1/cgroup` file, which lists the name of the namespaces.
 
-# Cgroups
+## Cgroups
 cgroups, or control groups is a kernel feature that provides resource tracking and limitations for a group of tasks. In docker terms, the docker daemon creates and assigns a cgroup for each running container, and you can set what resource container is able to get, e.g., CPU, memory or pid limits.
 
 e.g., `docker run` takes:
@@ -252,3 +253,41 @@ As demonstrated above, all interfaces on the host is visible inside the containe
 ### Be cautious with exposed ports
 
 When you're connecting containers together with network namespace, you don't need to bind the container port to the host port with the `-p` option. Exposed ports may create conflict with port bindings on the host. However, if your container is the entrypoint to your web app, then I can't think of a specific reason *not* to use port binding, since otherwise, you will have to setup iptable rules to route traffic from the host interface to container IP.
+
+## User Management
+
+`root` in the container *is* root on the host by default. I discovered [this hack](/2016/05/03/docker...root...root...docker-a.k.a.-the-docker-group-is-a-backdoor/) that exploits read/write mount and `root` user in the container. Consider this:
+
+```
+$ docker run --rm alpine whoami
+root
+
+$ docker run --rm alpine id
+uid=0(root) gid=0(root) groups=0(root),1(bin),2(daemon),3(sys),4(adm),6(disk),10(wheel),11(floppy),20(dialout),26(tape),27(video)
+```
+
+and you can do more damaging things like:
+
+```
+docker run -v /:/mnt alpine rm -rf /mnt  # DON'T RUN THIS!
+```
+
+### Run as non-privileged user
+
+Since Docker 1.7, you can provide `-u`|`--user` to `run` command to run the container as a specific user:
+
+```
+$ docker run -u 1000:1000 --rm -v /:/mnt alpine id
+uid=1000 gid=1000
+```
+
+Now the cuser in the container doesn't have the root privileges:
+
+```
+$ docker run -u 1000:1000 --rm -v /:/mnt alpine rm -rf /mnt/bin/sh
+rm: can't remove '/mnt/bin/sh': Permission denied
+```
+
+### Use user namespace remapping
+
+Since Docker 1.10, Docker added support for user namespace remapping. With this feature, the container is able to run with the root user inside the container but an unprivileged user on the host.
