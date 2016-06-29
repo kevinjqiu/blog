@@ -290,4 +290,7 @@ rm: can't remove '/mnt/bin/sh': Permission denied
 
 ### Use user namespace remapping
 
-Since Docker 1.10, Docker added support for user namespace remapping. With this feature, the container is able to run with the root user inside the container but an unprivileged user on the host.
+Since Docker 1.10, Docker added support for user namespace for the docker daemon. With this feature, the container is able to run with the root user inside the container but an unprivileged user on the host.
+
+Let's see an example. To activate it, we need to rerun the docker daemon with `--userns-remap` option.
+
