@@ -326,3 +326,54 @@ dockremap:100000:65536
 ```
 
 What this means is the `dockremap` user is allocated a block of 65536 user/group ids. Container started henceforth will be using user `root` in the container, but to the host, it's going to be user `dockremap`'s subordinate users.
+
+Unfortunately, this feature requires the kernel to be compiled with user namespaces turned on. Most distributions don't ship with this kernel config by default. Moreover, there have been security vulnerabilities related to [user namespaces](https://lwn.net/Articles/543273/) which hampers mainstream adoption.
+
+Another caveat about user namespace is once the daemon is run with `--userns-remap`, the images pulled previously pulled by the daemon without the flag are going to be pulled again, since the permissioning on the file system layers are no longer valid. So, if you decide to use user namespace remap in production, do it early on and do not switch back and forth.
+
+## Image Distribution
+
+The security goals are image provenance and trust. Provenance verifies the publisher of the image whereas trust verifies the integrity of the image.
+
+### Pull by digest (as oppose to by tag)
+
+Pulling images by tag name is surely convenient, but tags do not guarantee integrity. The same tag may not refer to the same image. This is surely the case when the tag name is `latest`, as it always points to the latest image being pushed in the repository. Other named tags are not immutable either, since one can always untag (through `docker rmi`) and re-tag and push image to change the image being pointed by the tag.
+
+Alternatively, pull by digest to ensure integrity and immutability. The repo digest is shown to you when you push an image to a registry:
+
+```
+# running the registry
+# docker run -p 5000:5000 -v ~/registry:/var/lib/registry --name=registry registry:2  # only works with registry version 2
+
+# building an image...
+# docker build -t localhost:5000/test .
+
+# push the image
+$ docker push localhost:5000/test
+The push refers to a repository [localhost:5000/test]
+6102f0d2ad33: Pushed
+latest: digest: sha256:04298820c9063b955614868b5cb2d60be91a3d7c560e0d6c377b0c3add764504 size: 528
+```
+
+We can subsequently pull the image using the digest:
+
+```
+$ docker pull localhost:5000/test@sha256:04298820c9063b955614868b5cb2d60be91a3d7c560e0d6c377b0c3add764504
+sha256:04298820c9063b955614868b5cb2d60be91a3d7c560e0d6c377b0c3add764504: Pulling from test
+Digest: sha256:04298820c9063b955614868b5cb2d60be91a3d7c560e0d6c377b0c3add764504
+Status: Downloaded newer image for localhost:5000/test@sha256:04298820c9063b955614868b5cb2d60be91a3d7c560e0d6c377b0c3add764504
+```
+
+This works well for registries you do control. However, I haven't found an easy way to find out the repo disgest for images hosted on the official docker hub, unless I'm missing something glaringly obvious, this sort of defeats the purpose if the official docker hub doesn't make pulling by digest easy for users.
+
+### Content Trust
+
+Docker 1.10 added content trust, which adds a layer of trust between the docker CLI and engine when pulling and pushing images. To enable it, set `DOCKER_CONTENT_TRUST` to 1:
+
+```
+export DOCKER_CONTENT_TRUST=1
+```
+
+and do `docker pull` as usual.
+
+
