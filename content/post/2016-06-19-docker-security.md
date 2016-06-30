@@ -376,4 +376,5 @@ export DOCKER_CONTENT_TRUST=1
 
 and do `docker pull` as usual.
 
+When content trust is turned on, what happens behind the scene is a notary server is contacted by the docker CLI, which responds with notary data for the CLI to verify, and when everything is checked out, the CLI obtains a repo digest, and asks the docker engine for the image given the repo digest. See the figure below. TODO
 
