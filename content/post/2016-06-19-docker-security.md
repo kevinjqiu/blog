@@ -368,13 +368,83 @@ This works well for registries you do control. However, I haven't found an easy 
 
 ### Content Trust
 
-Docker 1.10 added content trust, which adds a layer of trust between the docker CLI and engine when pulling and pushing images. To enable it, set `DOCKER_CONTENT_TRUST` to 1:
+#### When pulling
+
+Docker 1.10 added content trust, which adds a layer of trust between the docker CLI and engine when pulling and pushing images. To enable it, set `DOCKER_CONTENT_TRUST` to 1.
+
+When `DOCKER_CONTENT_TRUST` is not set, what `docker pull` does is like the following (diagram provided by the workshop)
+
+{{< figure src="/images/docker-pull-wo-ct.png" >}}
+
+When content trust is turned on, what happens behind the scene is a notary server is contacted by the docker CLI, which responds with notary data for the CLI to verify, and when everything is checked out, the CLI obtains a repo digest, and asks the docker engine for the image given the repo digest. See the figure below. See the following diagram (provided by the workshop)
+
+{{< figure src="/images/docker-pull-w-ct.png" >}}
+
+#### When pushing
+
+Same as pulling, you set `DOCKER_CONTENT_TRUST` to `1` and `docker push` as usual. The difference is the metadata of the repo is signed by your key that you register with the notary service.
+
+Let's see it in action. First let's pull an official image:
 
 ```
-export DOCKER_CONTENT_TRUST=1
+$ docker pull alpine
+Using default tag: latest
+Pull (1 of 1): alpine:latest@sha256:3dcdb92d7432d56604d4545cbd324b14e647b313626d99b889d0626de158f73a
+sha256:3dcdb92d7432d56604d4545cbd324b14e647b313626d99b889d0626de158f73a: Pulling from library/alpine
 ```
 
-and do `docker pull` as usual.
+Tag it with my repo:
 
-When content trust is turned on, what happens behind the scene is a notary server is contacted by the docker CLI, which responds with notary data for the CLI to verify, and when everything is checked out, the CLI obtains a repo digest, and asks the docker engine for the image given the repo digest. See the figure below. TODO
+```
+$ docker tag kevinjqiu/alpine-test:trusted
+```
 
+Push the image to my docker hub account:
+
+```
+$ docker push kevinjqiu/alpine-test:trusted
+The push refers to a repository [docker.io/kevinjqiu/alpine-test]
+4fe15f8d0ae6: Layer already exists
+trusted: digest: sha256:3dcdb92d7432d56604d4545cbd324b14e647b313626d99b889d0626de158f73a size: 506
+Signing and pushing trust metadata
+You are about to create a new root signing key passphrase. This passphrase
+will be used to protect the most sensitive key in your signing system. Please
+choose a long, complex passphrase and be careful to keep the password and the
+key file itself secure and backed up. It is highly recommended that you use a
+password manager to generate the passphrase and keep it safe. There will be no
+way to recover this key. You can find the key in your config directory.
+Enter passphrase for new root key with ID 80375a3:
+Repeat passphrase for new root key with ID 80375a3:
+Enter passphrase for new repository key with ID bb34875 (docker.io/kevinjqiu/alpine-test):
+Repeat passphrase for new repository key with ID bb34875 (docker.io/kevinjqiu/alpine-test):
+Finished initializing "docker.io/kevinjqiu/alpine-test"
+Successfully signed "docker.io/kevinjqiu/alpine-test":trusted
+```
+
+As this is the first time I'm pushing an image with `CONTENT_TRUST` set, it prompts me for a passphrase to sign a generated root key, and then a passphrase to sign the key used with the repo I'm pushing to (in this case, `kevinjqiu/alpine-test`).
+
+The generated keys will be stored under `$HOME/.docker/trust/private/root_keys` and `$HOME/.docker/trust/tuf_keys/` folders. 
+
+### Docker Security Scanning
+
+Docker security scanning (Nautilus) is a service provided by Docker Inc that routinely scan your file system layers for known security vulnerabilities (from [CVE](https://cve.mitre.org/) database). It also performs binary scan on statically linked binaries.
+
+It's worth noting that it's not the only solution out there. There are a few other [vendors](https://www.aquasec.com/) at DockerCon that provide container security.
+
+## Capabilities, seccomp and Linux Security Modules
+
+Now we're in the more hardcore territory of Linux security and is frankly beyond my understanding of Linux. However, the advice given by the workshop is an easy one: use the default, and do not give more privilege than that's required.
+
+### Do not run container with --privileged...
+
+Root user on the container by default doesn't get all the capabilities granted by the kernel. See `man capabilities` for a list of capabilities. By default, docker container's root user gets about a dozen capabilities. You can add or remove capabilities during runtime by specifying `--cap-add` or `--cap-drop`.
+
+It's worth pointing out that capabilities only apply to root users. If a container is run with `--user`, then `--cap-add` or `--cap-drop` don't apply, since non-root users don't have capabilities.
+
+`--privileged` gives a root user all capabilities, so unless you know what you're doing, don't do it. For docker development, it's recommended that you run the development container in privileged mode, but in general, there's never a reason to run with `--privileged` on production, since it gives *ALL* privileges.
+
+# References
+* https://docs.docker.com/engine/security/security/
+* https://github.com/riyazdf/dockercon-workshop/tree/master/capabilities
+* https://github.com/riyazdf/dockercon-workshop/tree/master/apparmor
+* https://github.com/riyazdf/dockercon-workshop/tree/master/seccomp
