@@ -12,7 +12,7 @@ In this article we'll be going over the concept of CouchDB views and find out ju
 The version of CouchDB we will be using is 1.6.
 
 # CouchDB views
-CouchDB is a document-oriented database that's super easy to get started. You serialize your data to JSON format, and throw it on the wire to CouchDB via an HTTP interface. To get the data out (querying) though, you will need to write "design docs" that contain map/reduce functions (usually in JavaScript). Internally, CouchDB uses the map/reduce functions to build up a B+Tree index, so querying against that view is a simple tree lookup.
+CouchDB is a document-oriented database that's super easy to get started. You serialize your data into JSON, and throw it on the wire to CouchDB via an HTTP interface. To get the data out (querying) though, you will need to write "design docs" that contain map/reduce functions. Internally, CouchDB uses the map/reduce functions to build up a B+Tree index, so querying against that view is a simple tree lookup.
 
 Out-of-the-box, CouchDB supports views written in JavaScript, however, support for other languages are available thanks to the CouchDB [query server protocol](http://docs.couchdb.org/en/1.6.1/query-server/protocol.html). CouchDB process itself does not do any querying. It simply loops through all the changes that have not been indexed since the last time, and send the changes to the external query server.
 
