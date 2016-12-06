@@ -22,7 +22,7 @@ View indexing is triggered by the map-reduce view updater.
 
 The following snippet is where it happens (`couch_mrview/src/couch_mrview_updater.erl`):
 
-```erlang
+```
 map_docs(Parent, State0) ->                                                                                                                                                                   
     case couch_work_queue:dequeue(State0#mrst.doc_queue) of
         ...
@@ -43,7 +43,7 @@ map_docs(Parent, State0) ->
 
 and `couch_query_servers:map_doc_raw` is encodes the document into JSON and sends it over to the external query server process:
 
-```erlang
+```
 map_doc_raw(Proc, Doc) ->                                                                                                                                                                     
     Json = couch_doc:to_json_obj(Doc, []),
     {ok, proc_prompt_raw(Proc, [<<"map_doc">>, Json])}.
