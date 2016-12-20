@@ -1,5 +1,5 @@
 +++
-title = "CouchDB Query Protocol and Index Benchmarking (Part 1)"
+title = "CouchDB Query Protocol"
 draft = false
 date = "2016-11-16T00:05:38-05:00"
 categories = ["couchdb"]
