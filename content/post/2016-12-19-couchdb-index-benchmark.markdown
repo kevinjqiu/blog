@@ -445,11 +445,11 @@ Let's combine the two tables together:
 | erlang native view                 | 19821.25    | 9363.44     |
 ```
 
-Here are some conclusion we can draw from this experiment:
+Here are some conclusions we can draw from this experiment:
 
 * Native Erlang views are the fastest by a large margin.
-* Native Erlang views' advantage is even more obvious when documents are larger
+* Native Erlang views' advantage is even more obvious when having large documents
 * Avoid external reducer as much as you can. (i.e., Use the builtin reducer whenever you can)
-* PyPy does not offer performance improvements for Python views (in some cases, it's worse) probably due to the way query protocol works
-* The default Javascript view performance isn't great
+* PyPy does not offer performance improvements for Python views (in some cases, it's even worse) probably due to the way query protocol works
+* Javascript view performance isn't great out-of-the-box. Maybe SpiderMonkey can be replaced by NodeJS?
 * Use simplejson for Python view when documents are larger
