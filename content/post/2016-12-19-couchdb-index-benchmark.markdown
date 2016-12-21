@@ -1,5 +1,5 @@
 +++
-draft = true
+draft = false
 date = "2016-12-19T23:34:56-05:00"
 title = "CouchDB Indexing Benchmark"
 categories = ["couchdb", "performance"]
