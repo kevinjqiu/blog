@@ -377,6 +377,7 @@ One **caveat** about using Erlang native views: since it's running on the same r
 
 Let's look at where we stand in terms of indexer option and performance:
 
+```
 | Option                             | Average c/s |
 |------------------------------------|-------------|
 | couchjs/external reducer           | 5799.93     |
@@ -386,6 +387,7 @@ Let's look at where we stand in terms of indexer option and performance:
 | couchpy/simplejson/builtin reducer | 10201.86    |
 | couchpy/pypy/builtin reducer       | 11463.88    |
 | erlang native view                 | 19821.25    |
+```
 
 {{< figure src="/images/couchdb-indexing-benchmark.png" title="Benchmark" >}}
 
@@ -413,6 +415,7 @@ def generate_doc(i):
 
 with this new database, rerun the above benchmark. We have:
 
+```
 | Option                             | Average c/s |
 |------------------------------------|-------------|
 | couchjs/external reducer           | 648.50      |
@@ -422,6 +425,7 @@ with this new database, rerun the above benchmark. We have:
 | couchpy/simplejson/builtin reducer | 2352.69     |
 | couchpy/pypy/builtin reducer       | 1265.20     |
 | erlang native view                 | 9363.44     |
+```
 
 {{< figure src="/images/couchdb-indexing-benchmark-300k.png" title="Benchmark @ 300k" >}}
 
@@ -429,6 +433,7 @@ with this new database, rerun the above benchmark. We have:
 
 Let's combine the two tables together:
 
+```
 | Option                             | cps@1k      |   cps@300k  |
 |------------------------------------|-------------|-------------|
 | couchjs/external reducer           | 5799.93     | 648.50      |
@@ -438,11 +443,13 @@ Let's combine the two tables together:
 | couchpy/simplejson/builtin reducer | 10201.86    | 2352.69     |
 | couchpy/pypy/builtin reducer       | 11463.88    | 1265.20     |
 | erlang native view                 | 19821.25    | 9363.44     |
+```
 
 Here are some conclusion we can draw from this experiment:
-- Native Erlang views are the fastest by a large margin.
-- Native Erlang views' advantage is even more obvious when documents are larger
-- Avoid external reducer as much as you can. (i.e., Use the builtin reducer whenever you can)
-- PyPy does not offer performance improvements for Python views (in some cases, it's worse) probably due to the way query protocol works
-- The default Javascript view performance isn't great
-- Use simplejson for Python view when documents are larger
+
+* Native Erlang views are the fastest by a large margin.
+* Native Erlang views' advantage is even more obvious when documents are larger
+* Avoid external reducer as much as you can. (i.e., Use the builtin reducer whenever you can)
+* PyPy does not offer performance improvements for Python views (in some cases, it's worse) probably due to the way query protocol works
+* The default Javascript view performance isn't great
+* Use simplejson for Python view when documents are larger
