@@ -7,11 +7,13 @@ categories = ["couchdb", "performance"]
 
 In the [last post](2016-11-16-couchdb-index-view-benchmark), we discussed how CouchDB's external query server works by examining the raw protocol. In this post, we're going to take a look at the performance of different query servers.
 
-The code used in this benchmarking are all [here](https://gist.github.com/kevinjqiu/dd461b36a6f1d6d755d7a317d8f98b75)
+The code used in this benchmarking is [here](https://gist.github.com/kevinjqiu/dd461b36a6f1d6d755d7a317d8f98b75).
+
+I listed below the method of the benchmark in detail. If you want you can [jump to conclusion](#result-comparison).
 
 # The Setup
 
-The benchmarks are done on my laptop (Intel 6th-gen i7 processor, 8G RAM, SSD) with CouchDB 1.6 in a docker container. But since we're benchmarking python views as well, let's make a new docker image and add python query server to it. Here's the dockerfile:
+The benchmarks are done on my laptop (Intel 6th-gen i7 processor, 8G RAM, SSD) with CouchDB 1.6 in a docker container. Since we're benchmarking python views as well, we're going to customize the docker image add python query server to it. Here's the dockerfile:
 
     FROM couchdb
     RUN apt-get update -yqq && apt-get install -y python python-pip
@@ -41,7 +43,7 @@ The data we're working have simple structures. We'll be generating data of the f
 }
 ```
 
-Suppose we store username with their score in the document, whatever that is. It's a contrived example so bear with me :)
+We are storing the name of the user along with their score in the document, whatever that is. It's a contrived example so bear with me :)
 
 To populate a dataset for our benchmarking, let's use a script:
 
@@ -128,7 +130,7 @@ The view we are going to write is to calculate the total score of all users for 
 
 The map function written in Javascript:
 
-```
+```javascript
 function(doc) {
     if (doc.metadata && doc.metadata.createdAt) {
         var parts = doc.metadata.createdAt.split("-"),
@@ -141,7 +143,7 @@ function(doc) {
 
 and the reduce function:
 
-```
+```javascript
 function(keys, values, rereduce) {
     return sum(values);
 }
@@ -153,13 +155,13 @@ To invoke the view, we can send a curl request to `http://localhost:9999/test/_d
 
 ### Monitor changes-per-second metric
 
-CouchDB exposes its indexing status through the `/_active_tasks` endpoint. It contains the number of changes to be indexed in total and the number of changes already indexed. From that, we can calculate the changes per second as our benchmark.
+CouchDB exposes its indexing status through the `/_active_tasks` endpoint. It contains the number of changes to be indexed in total and the number of changes already indexed. From that, we can calculate the changes per second as our benchmark. As stated before, you can find the code [here](https://gist.github.com/kevinjqiu/dd461b36a6f1d6d755d7a317d8f98b75)
 
     python cps.py _design/scoresByMonthJS
 
 This starts a monitoring script on the specified design doc, and prints out changes per second number every 1 second.
 
-With this script running, in another terminal, let's trigger a view:
+With this script running, in another terminal, let's trigger the view:
 
     curl "http://localhost:9999/test/_design/scoresByMonthJS/_view/scoresByMonth?limit=11&group=true"
 
@@ -208,9 +210,9 @@ and in the other terminal, we will see the result:
     {"key":["2016","10"],"value":20993863}
     ]}
 
-So the average for a Javascript view is around 3796 changes per second.
+So the average for a Javascript view is around 5.8k changes per second.
 
-### Native Reducer
+### Builtin Reducer
 
 Many of you with CouchDB knowledge will quick to point out that I used a Javascript function as reducer to calculate the sum of the values. This is not very efficient, since (1) data will have to be serialized and sent to the external query server to calculate the result and (2) Javascript isn't the fastest at mathematics (the default couchjs is using the Spider Monkey engine). We can cut short this loop by using the builtin `_sum` reducer, which is written in Erlang and run on the same runtime as CouchDB itself, therefore, cut the roundtrip to the query server plus the serialization/deserialization cost.
 
