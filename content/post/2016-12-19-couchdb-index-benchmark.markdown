@@ -387,11 +387,11 @@ Let's look at where we stand in terms of indexer option and performance:
 | couchpy/pypy/builtin reducer       | 11463.88    |
 | erlang native view                 | 19821.25    |
 
+{{< figure src="/images/couchdb-indexing-benchmark.png" title="Benchmark" >}}
+
 ## Benchmark with bigger documents
 
 The above set of tests are done on documents with smallish size. Let's add some junk data to the documents. I modified the document generation procedure to add in some arbitrary string properties so now the average document size is about 300k.
-
-{{< figure src="/images/couchdb-indexing-benchmark.png" title="Benchmark" >}}
 
 ```python
 def generate_doc(i):
@@ -423,7 +423,7 @@ with this new database, rerun the above benchmark. We have:
 | couchpy/pypy/builtin reducer       | 1265.20     |
 | erlang native view                 | 9363.44     |
 
-{{< figure src="/images/couchdb-indexing-benchmark-300k.png" title="Benchmark" >}}
+{{< figure src="/images/couchdb-indexing-benchmark-300k.png" title="Benchmark @ 300k" >}}
 
 ## Result Comparison
 
