@@ -290,7 +290,7 @@ The result isn't that different from Javascript map function with builtin reduce
 
 #### simplejson
 
-Since An external query server need to deserialize JSON input from CouchDB and serialize result back into JSON form to be consumed by CouchDB, the implementation of the JSON module could potentially make a difference in performance. As `couchpy` defaults to use the system `json` module provided by the Python distribution, it's not the most performant implementation. `simplejson` is a drop-in replacement for the Python's `json` module which uses a C implementation for json encoding/decoding. Let's try that.
+Since an external query server need to deserialize JSON input from CouchDB and serialize the result back into JSON form to be consumed by CouchDB, the implementation of the JSON module could potentially make a difference in performance. As `couchpy` defaults to use the system `json` module provided by the Python distribution, it's not the most performant implementation. `simplejson` is a drop-in replacement for the Python's `json` module which uses a C implementation for json encoding/decoding. Let's try that.
 
 First, we need to install simplejson (which requires Python C headers to be installed. On Debian, install `python-dev` package) on the container and then modify the config to use `couchpy --json-module=simplejson` as the Python query server command.
 
@@ -327,15 +327,15 @@ We can also try to use pypy as our interpreter. PyPy is an alternative implement
     c/s = 12841.43
     ^Caverage = 11463.88
 
-The performance for PyPy isn't much greater is probably due to the fact how the CouchDB query protocol works: it sends the query server one document at a time to run the map function over. JIT excels at loops but at each request/response cycle, the query server only operate one document at a time. The JIT wasn't given a chance to warmup. That was my conjecture anyway, as I'm not an expert on PyPy's JIT internals.
+The performance for PyPy isn't much greater is probably due to the fact how the CouchDB query protocol works: it sends the query server one document at a time to run the map function over. JIT excels at loops but at each request/response cycle, the query server only operates one document at a time. The JIT wasn't given a chance to warmup. That was my conjecture anyway, as I'm not an expert on PyPy's JIT internals.
 
 ## Native Views
 
 As we can see, the performance of external query servers don't vary by a lot. Another interesting observation is that the query server process was not fully saturated, doesn't matter when it's Javascript, Python, or PyPy.
 
-Looking at the [CouchDB query protocol](2016-11-16-couchdb-index-view-benchmark), it seemed that the process of feeding data to the external query server is the bottleneck: The CouchDB erlang process serializes the document from Erlang to JSON, send JSON to the query server's process. The query server deserializes JSON, run the map/reduce function and serializes that into JSON to be fed back to the CouchDB process, and the CouchDB process deserializes that back into Erlang's data structure. Wouldn't it be great if all of that can happen within the same runtime as the CouchDB process? That brought me to research writing CouchDB views in Erlang, and indeed, there is [such thing](https://wiki.apache.org/couchdb/EnableErlangViews).
+Looking at the [CouchDB query protocol](2016-11-16-couchdb-index-view-benchmark), it seemed that the process of feeding data to the external query server is the bottleneck: The CouchDB erlang process serializes the document from Erlang to JSON, send JSON to the query server's process. The query server deserializes JSON, run the map/reduce function and serializes that into JSON to be fed back to the CouchDB process, and the CouchDB process deserializes that back into Erlang's data structure. Wouldn't it be great if all of that can happen within the same runtime as the CouchDB process? That brought me to research writing CouchDB views in Erlang, and indeed, there is [such a thing](https://wiki.apache.org/couchdb/EnableErlangViews).
 
-Having dabbled with Erlang at the beginning of my career before, I'm not put off by the idea. However, Erlang is not a beginner-friendly language if you're coming from the C/C++/Java line.
+Having dabbled with Erlang at the beginning of my career, I'm not put off by the idea. However, Erlang is not a beginner-friendly language if you're coming from the C/C++/Java line.
 
 First we need to enable Erlang native query server in the configs.
 
@@ -343,7 +343,7 @@ First we need to enable Erlang native query server in the configs.
 
 ### Map
 
-It takes some trial-and-error but translating the map function into Erlang isn't as daunting a task:
+It takes some trial-and-error but there it is, the Erlang version of the map function:
 
 ```
 fun({Doc})->
@@ -357,7 +357,7 @@ fun({Doc})->
 end.
 ```
 
-CouchDB documents are represented in Erlang as tuple of lists (proplists), and hence we use `proplists:get_value` to extract values given certain "keys". Erlang is big on pattern-matching so we use pattern matching to further extract `Year` and `Month` from the split string. Erlang doesn't have a native string type. Strings are represented as list of binaries. `<<"createdAt">>` is the literal to convert the string `createdAt` to its binary list equivalent to match the type of the document object. Again, I'm not an Erlang expert, so please point out my inaccuracies with regard to the language.
+CouchDB documents are represented in Erlang as a tuple of lists (proplists), and hence we use [`proplists:get_value`](http://erlang.org/doc/man/proplists.html) to extract values given certain "keys". Erlang has great pattern-matching feature so we use it to further extract `Year` and `Month` from the split string. Strings in Erlang are represented as a list of binary numbers (referring to their codepoint). `<<"createdAt">>` is the literal to convert the string `createdAt` to its binary list equivalent to match the type of the document object. Again, I'm not an Erlang expert, so please point out my inaccuracies with regard to the language.
 
 ### Reduce
 
@@ -371,9 +371,13 @@ We will use the same reducer `_sum` as it has served us well.
     c/s = 19821.25
     ^Caverage = 19821.25
 
-There you have it! The Erlang view is about 173% as fast as the previous fastest (PyPy) option. At work, I was able to produce an Erlang view that performed 5 to 6 times as fast as an equivalent Python view since on average our production documents are much bigger (several kilobytes per document). The serialization saving is much more pronounced.
+There you have it! The Erlang view is about 173% as fast as the previous fastest (PyPy) option.
 
-One caveat about Erlang native views: since it's running on the same runtime as CouchDB, it's able to access CouchDB's internal API and call Erlang functions that maybe destructive. Do not run untrusted view functions directly.
+One **caveat** about using Erlang native views: since it's running on the same runtime as CouchDB and is not sandboxed, it's able to access CouchDB's internal API and call Erlang functions that maybe destructive. Do not run untrusted view functions directly.
+
+## Benchmark with bigger documents
+
+The above set of tests are done on documents with smallish size. Let's 
 
 ## Result Comparison
 
