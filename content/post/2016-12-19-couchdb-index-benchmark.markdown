@@ -375,11 +375,7 @@ There you have it! The Erlang view is about 173% as fast as the previous fastest
 
 One **caveat** about using Erlang native views: since it's running on the same runtime as CouchDB and is not sandboxed, it's able to access CouchDB's internal API and call Erlang functions that maybe destructive. Do not run untrusted view functions directly.
 
-## Benchmark with bigger documents
-
-The above set of tests are done on documents with smallish size. Let's 
-
-## Result Comparison
+Let's look at where we stand in terms of indexer option and performance:
 
 | Option                             | Average c/s |
 |------------------------------------|-------------|
@@ -391,4 +387,62 @@ The above set of tests are done on documents with smallish size. Let's
 | couchpy/pypy/builtin reducer       | 11463.88    |
 | erlang native view                 | 19821.25    |
 
+## Benchmark with bigger documents
+
+The above set of tests are done on documents with smallish size. Let's add some junk data to the documents. I modified the document generation procedure to add in some arbitrary string properties so now the average document size is about 300k.
+
 {{< figure src="/images/couchdb-indexing-benchmark.png" title="Benchmark" >}}
+
+```python
+def generate_doc(i):
+    doc = {
+        'metadata': {
+            'docType': 'score',
+            'createdAt': random_date()
+        },
+        'username': random_str(),
+        'score': random.randint(0, 5000),
+        'custom_data': {
+        }
+    }
+
+    for _ in range(random.randint(0, 100)):
+        doc['custom_data'][random_str()] = \
+            base64.b64encode((random_str() * 100).encode('ascii')).decode('ascii')
+```
+
+with this new database, rerun the above benchmark. We have:
+
+| Option                             | Average c/s |
+|------------------------------------|-------------|
+| couchjs/external reducer           | 648.50      |
+| couchjs/builtin reducer            | 727.18      |
+| couchpy/external reducer           | 1564.38     |
+| couchpy/builtin reducer            | 1590.20     |
+| couchpy/simplejson/builtin reducer | 2352.69     |
+| couchpy/pypy/builtin reducer       | 1265.20     |
+| erlang native view                 | 9363.44     |
+
+{{< figure src="/images/couchdb-indexing-benchmark-300k.png" title="Benchmark" >}}
+
+## Result Comparison
+
+Let's combine the two tables together:
+
+| Option                             | cps@1k      |   cps@300k  |
+|------------------------------------|-------------|-------------|
+| couchjs/external reducer           | 5799.93     | 648.50      |
+| couchjs/builtin reducer            | 10769.73    | 727.18      |
+| couchpy/external reducer           | 8120.69     | 1564.38     |
+| couchpy/builtin reducer            | 10470.51    | 1590.20     |
+| couchpy/simplejson/builtin reducer | 10201.86    | 2352.69     |
+| couchpy/pypy/builtin reducer       | 11463.88    | 1265.20     |
+| erlang native view                 | 19821.25    | 9363.44     |
+
+Here are some conclusion we can draw from this experiment:
+- Native Erlang views are the fastest by a large margin.
+- Native Erlang views' advantage is even more obvious when documents are larger
+- Avoid external reducer as much as you can. (i.e., Use the builtin reducer whenever you can)
+- PyPy does not offer performance improvements for Python views (in some cases, it's worse) probably due to the way query protocol works
+- The default Javascript view performance isn't great
+- Use simplejson for Python view when documents are larger
