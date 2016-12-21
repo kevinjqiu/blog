@@ -2,14 +2,16 @@
 draft = true
 date = "2016-12-19T23:34:56-05:00"
 title = "CouchDB Indexing Benchmark"
-
+categories = ["couchdb", "performance"]
 +++
 
 In the [last post](2016-11-16-couchdb-index-view-benchmark), we discussed how CouchDB's external query server works by examining the raw protocol. In this post, we're going to take a look at the performance of different query servers.
 
+The code used in this benchmarking are all [here](https://gist.github.com/kevinjqiu/dd461b36a6f1d6d755d7a317d8f98b75)
+
 # The Setup
 
-The benchmark is done on an AWS t2.large instance with CouchDB 1.6 running in a docker container. But since we're benchmarking python views as well, let's make a new docker image and add python query server to it. Here's the dockerfile:
+The benchmarks are done on my laptop (Intel 6th-gen i7 processor, 8G RAM, SSD) with CouchDB 1.6 in a docker container. But since we're benchmarking python views as well, let's make a new docker image and add python query server to it. Here's the dockerfile:
 
     FROM couchdb
     RUN apt-get update -yqq && apt-get install -y python python-pip
@@ -163,15 +165,30 @@ With this script running, in another terminal, let's trigger a view:
 
 Go back to the terminal where the monitoring script is run. We will see that it started to print out cps values:
 
+    $ python cps.py _design/scoresByMonthJS
     design doc: _design/scoresByMonthJS
     Press Ctrl+C to exit
-    c/s = 3030.00
-    c/s = 3636.00
-    ...
+    c/s = 4141.00
+    c/s = 7373.00
+    c/s = 7120.50
+    c/s = 5378.25
+    c/s = 5534.80
+    c/s = 5605.50
+    c/s = 5670.43
+    c/s = 5719.12
+    c/s = 5757.00
+    c/s = 6060.00
+    c/s = 6110.50
+    c/s = 6041.64
+    c/s = 5570.54
+    c/s = 5605.50
+    c/s = 5629.07
+    c/s = 5649.69
+    c/s = 5632.24
 
 And when the indexing is complete, press Ctrl+C and the average will be printed out:
 
-    average = 3796.83
+    ^Caverage = 5799.93
 
 and in the other terminal, we will see the result:
 
@@ -201,22 +218,18 @@ To use it, simply change the reducer function to `_sum`. Start the monitoring an
 
     design doc: _design/scoresByMonthJS
     Press Ctrl+C to exit
-    c/s = 6868.00
-    c/s = 6969.00
-    c/s = 6935.33
-    c/s = 6842.75
-    c/s = 6847.80
-    c/s = 6817.50
-    c/s = 7329.71
-    c/s = 7234.12
-    c/s = 7159.78
-    c/s = 7100.30
-    c/s = 7079.18
-    c/s = 6510.62
-    c/s = 6774.21
-    ^Caverage = 6959.10
+    c/s = 3333.00
+    c/s = 9696.00
+    c/s = 11312.00
+    c/s = 11850.67
+    c/s = 12069.50
+    c/s = 12221.00
+    c/s = 12338.83
+    c/s = 12365.29
+    c/s = 11741.25
+    ^Caverage = 10769.73
 
-So, by simply changing the reducer from external to builtin, the indexing speed improved `183.3%`!
+So, by simply changing the reducer from external to builtin, the indexing speed improved `185.5%`!
 
 ## Benchmark Python views
 
@@ -239,44 +252,137 @@ Reduce:
 We use a sub-optimal reducer to draw comparison with the first Javascript benchmark we did before. And it turned out that Python views are slightly more performant:
 
     $ python cps.py _design/scoresByMonthPY
-    c/s = 5083.67
-    c/s = 5024.75
-    c/s = 5050.00
-    c/s = 4999.50
-    c/s = 4658.62
-    c/s = 4702.11
-    c/s = 4696.50
-    c/s = 4710.27
-    c/s = 4704.92
-    c/s = 4566.64
-    c/s = 4585.40
-    c/s = 4601.81
-    c/s = 4758.88
-    c/s = 4646.00
-    c/s = 4651.05
-    average = 4762.68
+    design doc: _design/scoresByMonthPY
+    Press Ctrl+C to exit
+    c/s = 2323.00
+    c/s = 6969.00
+    c/s = 8433.50
+    c/s = 8719.67
+    c/s = 8913.25
+    c/s = 8948.60
+    c/s = 8972.17
+    c/s = 9003.43
+    c/s = 9014.25
+    c/s = 9011.44
+    c/s = 9019.30
+    ^Caverage = 8120.69
 
 Let's switch the reducer to CouchDB's builtin `_sum` function.
 
     design doc: _design/scoresByMonthPY
     Press Ctrl+C to exit
-    c/s = 6363.00
-    c/s = 6363.00
-    c/s = 6329.33
-    c/s = 6337.75
-    c/s = 6282.20
-    c/s = 6783.83
-    c/s = 6680.43
-    c/s = 6590.25
-    c/s = 6508.89
-    c/s = 6494.30
-    c/s = 6211.50
-    c/s = 6207.62
-    c/s = 6225.93
-    c/s = 6235.07
-    average = 6400.94
+    c/s = 5959.00
+    c/s = 8938.50
+    c/s = 9864.33
+    c/s = 10403.00
+    c/s = 11842.25
+    c/s = 11837.20
+    c/s = 11833.83
+    c/s = 11802.57
+    c/s = 11753.88
+    ^Caverage = 10470.51
 
 The result isn't that different from Javascript map function with builtin reducer.
 
 ### Improving couchpy
 
+#### simplejson
+
+Since An external query server need to deserialize JSON input from CouchDB and serialize result back into JSON form to be consumed by CouchDB, the implementation of the JSON module could potentially make a difference in performance. As `couchpy` defaults to use the system `json` module provided by the Python distribution, it's not the most performant implementation. `simplejson` is a drop-in replacement for the Python's `json` module which uses a C implementation for json encoding/decoding. Let's try that.
+
+First, we need to install simplejson (which requires Python C headers to be installed. On Debian, install `python-dev` package) on the container and then modify the config to use `couchpy --json-module=simplejson` as the Python query server command.
+
+Let's see the result:
+
+    $ python cps.py _design/scoresByMonthPY
+    design doc: _design/scoresByMonthPY
+    Press Ctrl+C to exit
+    c/s = 5454.00
+    c/s = 11514.00
+    c/s = 12019.00
+    c/s = 12120.00
+    c/s = 9675.80
+    c/s = 9999.00
+    c/s = 10316.43
+    c/s = 10516.62
+    ^Caverage = 10201.86
+
+Interesting... `simplejson` performance is only on-par with dthe stock `json` module. That's a little unexpected. However, if you look at `top` while the indexer is running, the Python process never consumes more than 60% of CPU time.
+
+#### PyPy
+
+We can also try to use pypy as our interpreter. PyPy is an alternative implementation of Python that adds a Just-In-Time compiler. The benchmark showed a marginal improvement over CPython.
+
+    $ python cps.py _design/scoresByMonthPY
+    design doc: _design/scoresByMonthPY
+    Press Ctrl+C to exit
+    c/s = 6767.00
+    c/s = 10453.50
+    c/s = 11648.67
+    c/s = 12195.75
+    c/s = 12524.00
+    c/s = 13816.80
+    c/s = 12841.43
+    ^Caverage = 11463.88
+
+The performance for PyPy isn't much greater is probably due to the fact how the CouchDB query protocol works: it sends the query server one document at a time to run the map function over. JIT excels at loops but at each request/response cycle, the query server only operate one document at a time. The JIT wasn't given a chance to warmup. That was my conjecture anyway, as I'm not an expert on PyPy's JIT internals.
+
+## Native Views
+
+As we can see, the performance of external query servers don't vary by a lot. Another interesting observation is that the query server process was not fully saturated, doesn't matter when it's Javascript, Python, or PyPy.
+
+Looking at the [CouchDB query protocol](2016-11-16-couchdb-index-view-benchmark), it seemed that the process of feeding data to the external query server is the bottleneck: The CouchDB erlang process serializes the document from Erlang to JSON, send JSON to the query server's process. The query server deserializes JSON, run the map/reduce function and serializes that into JSON to be fed back to the CouchDB process, and the CouchDB process deserializes that back into Erlang's data structure. Wouldn't it be great if all of that can happen within the same runtime as the CouchDB process? That brought me to research writing CouchDB views in Erlang, and indeed, there is [such thing](https://wiki.apache.org/couchdb/EnableErlangViews).
+
+Having dabbled with Erlang at the beginning of my career before, I'm not put off by the idea. However, Erlang is not a beginner-friendly language if you're coming from the C/C++/Java line.
+
+First we need to enable Erlang native query server in the configs.
+
+    curl -XPUT -H "Content-Type:application/json" http://localhost:9999/_config/native_query_servers/erlang -d'"{couch_native_process, start_link, []}"'
+
+### Map
+
+It takes some trial-and-error but translating the map function into Erlang isn't as daunting a task:
+
+```
+fun({Doc})->
+    case proplists:get_value(<<"metadata">>, Doc) of
+        {Metadata} ->
+            CreatedAt = proplists:get_value(<<"createdAt">>, Metadata),
+            case string:tokens(binary_to_list(CreatedAt), "-") of
+                [Year, Month|_] -> Emit([list_to_binary(Year), list_to_binary(Month)], proplists:get_value(<<"score">>, Doc))
+        end
+    end
+end.
+```
+
+CouchDB documents are represented in Erlang as tuple of lists (proplists), and hence we use `proplists:get_value` to extract values given certain "keys". Erlang is big on pattern-matching so we use pattern matching to further extract `Year` and `Month` from the split string. Erlang doesn't have a native string type. Strings are represented as list of binaries. `<<"createdAt">>` is the literal to convert the string `createdAt` to its binary list equivalent to match the type of the document object. Again, I'm not an Erlang expert, so please point out my inaccuracies with regard to the language.
+
+### Reduce
+
+We will use the same reducer `_sum` as it has served us well.
+
+### Benchmark
+
+    $ python cps.py _design/scoresByMonthERL
+    design doc: _design/scoresByMonthERL
+    Press Ctrl+C to exit
+    c/s = 19821.25
+    ^Caverage = 19821.25
+
+There you have it! The Erlang view is about 173% as fast as the previous fastest (PyPy) option. At work, I was able to produce an Erlang view that performed 5 to 6 times as fast as an equivalent Python view since on average our production documents are much bigger (several kilobytes per document). The serialization saving is much more pronounced.
+
+One caveat about Erlang native views: since it's running on the same runtime as CouchDB, it's able to access CouchDB's internal API and call Erlang functions that maybe destructive. Do not run untrusted view functions directly.
+
+## Result Comparison
+
+| Option                             | Average c/s |
+|------------------------------------|-------------|
+| couchjs/external reducer           | 5799.93     |
+| couchjs/builtin reducer            | 10769.73    |
+| couchpy/external reducer           | 8120.69     |
+| couchpy/builtin reducer            | 10470.51    |
+| couchpy/simplejson/builtin reducer | 10201.86    |
+| couchpy/pypy/builtin reducer       | 11463.88    |
+| erlang native view                 | 19821.25    |
+
+{{< figure src="/images/couchdb-indexing-benchmark.png" title="Benchmark" >}}
