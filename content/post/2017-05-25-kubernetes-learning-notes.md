@@ -42,11 +42,13 @@ Overmind Service
 
 Here are the API definitions:
 
-* `/_health` - The health of the overmind and its subordinates
+* `GET /_health` - The health of the overmind and its subordinates
 * `GET /zerglings` - All zerglings the overmind is aware of and their locations
 * `GET /zerglings/<zergling_id>` - Get the status of the specified zergling
-* `POST /zerglings/<zergling_id>/_action` - Move the zergling
-* `POST /zerglings/_spawn` - Spawn a zergling (through **viper** but omitted for simplicity)
+* `POST /zerglings/<zergling_id>` - Move the zergling
+* `POST /zerglings/` - Spawn a zergling (through **viper** but omitted for simplicity)
+
+You can find the full source code [here](https://github.com/kevinjqiu/overmind).
 
 Storage
 -------
