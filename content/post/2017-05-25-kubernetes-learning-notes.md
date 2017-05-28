@@ -7,8 +7,7 @@ categories = ["kubernetes"]
 
 Parts
 =====
-
-* [Part 1 - Basic Deployment](2017-05-27-kubernetes-learning-notes-part-1-deployment)
+* [Part 1 - Basic Deployment]({{< relref "2017-05-27-kubernetes-learning-notes-part-1-deployment.md" >}})
 * Part 2 - Deploy CouchDB
 
 Goals
