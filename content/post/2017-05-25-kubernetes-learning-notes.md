@@ -9,6 +9,9 @@ Parts
 =====
 * [Part 1 - Basic Deployment]({{< relref "2017-05-27-kubernetes-learning-notes-part-1-deployment.md" >}})
 * [Part 2 - Deploy Stateful Services]({{< relref "2017-05-29-kubernetes-learning-notes-part-2-stateful-service.md" >}})
+* Part 3 - Service Discovery
+* Part 4 - Rolling Upgrades
+* Part 5 - TBD
 
 Goals
 =====
