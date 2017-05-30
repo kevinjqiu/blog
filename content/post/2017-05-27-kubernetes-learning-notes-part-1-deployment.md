@@ -45,12 +45,12 @@ Pod
 A [Pod](https://kubernetes.io/docs/concepts/workloads/pods/pod-overview/) is the most basic building block of a Kubernetes. A pod represents a running process on your cluster. In container terms, a pod is one or more containers the need to work together. They containers in the same pod share the same networking namspace, which means container A can talk to container B in the same pod via `localhost`. In the overmind service example, we will be deploying the overmind docker container as a pod in the cluster.
 
 Replica Set
-===========
+-----------
 
 A [Replica Set](https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/) is a kubernetes "controller" that ensures at any given time, the correct number of "replicas" of a pod is present in the cluster. For example, if I declare that the `overmind` pod has a replica of 3. The replica set controller makes sure that there are 3 `overmind` pods running in the cluster. If for some reason, one pod died, the controller will spin up another pod in the cluster to bring the total number of replicas to 3.
 
 Deployment
-==========
+----------
 
 A [Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) declares the desired state for pods or replica sets. For example, you can declare that the deployment should use the rolling upgrade strategy so we can have zero-downtime deployment.
 
