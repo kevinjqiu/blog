@@ -8,10 +8,18 @@ notoc = true
 noread = true
 +++
 
-* I'm a software engineer living in the [Greater Toronto Area, Canada](https://en.wikipedia.org/wiki/Vaughan).
-* I graduated with distinction from [University of Toronto](https://www.utoronto.ca/), Computer Science program.
-* My favourite programming language is [Python](http://www.python.org) while I admire the beauty of [Clojure](http://clojure.org) and [Scala](http://scala-lang.org).
-* I also write [Go](http://golang.org), some Ruby and JavaScript (of course).
-* I love [docker](http://docker.io), [rabbitmq](https://www.rabbitmq.com/) and [ansible](https://www.ansible.com/)
-* I use console [vim](http://vim.org) with [tmux](https://tmux.github.io/) for almost all of my coding; [Arch Linux](http://archlinux.org) at home and [Ubuntu](http://ubuntu.com) at work.
-* Outside of computers, I also like world history, geography and piano.
+### Kevin Jing Qiu
+
+Born in the booming city of [Shanghai, PRC](https://en.wikipedia.org/wiki/Shanghai) in the 80s, Kevin got his first personal computer when he was 8, watching his dad tinkering with Apple II Basic late at night. Kevin fell in love with computer programming in the 90s, and pursued his dream of becoming a software engineer, which lead him to North America.
+
+Graduated with distinction from [University of Toronto](https://www.utoronto.ca/) Computer Science program, Kevin has been working in the industry since 2008. Now he lives in [Vaughan, ON](https://en.wikipedia.org/wiki/Vaughan) with his wife and daughter (another one on the way!).
+
+His favourite programming language is [Python](http://www.python.org), while he admires the beauty of [Clojure](http://clojure.org) and other [functional](https://www.haskell.org/) [programming](https://www.scala-lang.org/) languages.
+
+He's also proficient at [Go](http://golang.org), Ruby and JavaScript (the ES6 kind).
+
+Lately, he has been more involved on the infrastructure side of software, using heavily [docker](http://docker.io), [ansible](https://www.ansible.com/), [kubernetes](https://kubernetes.io), [terraform](terraform.io) and so on.
+
+He's an avid [vim](http://vim.org)mer and [tmux](https://tmux.github.io/)er and believes 工欲善其事，必先利其器 (To do a good job, an artisan needs the best tools).
+
+Outside of computers, he also like world history, geography, travelling and play piano for fun.
