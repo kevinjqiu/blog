@@ -12,7 +12,7 @@ noread = true
 
 Born in the booming city of [Shanghai, PRC](https://en.wikipedia.org/wiki/Shanghai) in the 80s, Kevin got his first personal computer when he was 8, watching his dad tinkering with Apple II Basic late at night. Kevin fell in love with computer programming in the 90s, and pursued his dream of becoming a software engineer, which lead him to North America.
 
-Graduated with distinction from [University of Toronto](https://www.utoronto.ca/) Computer Science program, Kevin has been working in the industry since 2008. Now he lives in [Vaughan, ON](https://en.wikipedia.org/wiki/Vaughan) with his wife and daughter (another one on the way!).
+Graduated with distinction from [University of Toronto](https://www.utoronto.ca/) Computer Science program, Kevin has been working in the industry since 2008. Now he lives in [Vaughan, ON](https://en.wikipedia.org/wiki/Vaughan) with his wife and 2 children.
 
 His favourite programming language is [Python](http://www.python.org), while he admires the beauty of [Clojure](http://clojure.org) and other [functional](https://www.haskell.org/) [programming](https://www.scala-lang.org/) languages.
 
