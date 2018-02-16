@@ -12,3 +12,4 @@ cp -r $cwd/public/* .
 git add *
 git commit -am "Build @ $current_time"
 git push -u origin "build-$current_time"
+hub pull-request -m "Update"
