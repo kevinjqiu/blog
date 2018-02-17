@@ -1,4 +1,4 @@
-baseurl = "http://blog.idempotent.ca"
+baseurl = "https://blog.idempotent.ca"
 languageCode = "en-us"
 title = "Qiu's Quibble"
 disqusShortname = "idempotentca"
