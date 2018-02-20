@@ -8,7 +8,7 @@ notoc = true
 noread = true
 +++
 
-### Kevin Jing Qiu
+### Kevin Jing Qiu [[resume](http://resume.idempotent.ca/)]
 
 Born in the booming city of [Shanghai, PRC](https://en.wikipedia.org/wiki/Shanghai) in the 80s, Kevin got his first personal computer when he was 8, watching his dad tinkering with Apple II Basic late at night. Kevin fell in love with computer programming in the 90s, and pursued his dream of becoming a software engineer, which lead him to North America.
 
