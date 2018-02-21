@@ -1,7 +1,7 @@
 ---
 title: "TIL - a static site for your notes"
 date: 2018-02-21T00:13:33-05:00
-categories = ["effectiveness"]
+categories: ["effectiveness"]
 ---
 
 A couple of years ago I was introduced the idea of TIL (Today I Learned) and the habit of noting down things I learned that are note-worthy. Since then I've been looking for a perfect system that would allow me to:
