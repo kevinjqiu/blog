@@ -154,4 +154,176 @@ Setup Hosted Zone
 
 Now it's the meat of this experiment - setting up a hosted zone `.srv.qiu.home`.  We have a couple of options.  We can use the [file plugin](https://coredns.io/plugins/file/) that allows serving the zone from RFC 1035 style zone files.  Alternatively, we can setup an [etcd](coreos.com/etcd) cluster and use the [etcd plugin](https://coredns.io/plugins/file/) to read zone data from the etcd cluster.  I opted for the file plugin because I happen to have the zone files on hand when setting up bind9 (which also uses RFC 1035 zone file format) and setting up and maintaining an etcd cluster is probably a fight for another day.  I do like the promise of using an external data store for zone records though, since I don't have to manually update the zone files when a new host is available.
 
+Bind9 has a nice template for the zone file, which is what I used as a starting point.  Create a file named `db.$YOUR_ZONE_DOMAIN`, in my case, it's `db.srv.qiu.home`.
 
+First, define a SOA record.
+```
+$TTL    604800
+@    IN    SOA    ns1.srv.qiu.home. admin.srv.qiu.home. (
+                  3        ; Serial
+             604800        ; Refresh
+              86400        ; Retry
+            2419200        ; Expire
+             604800 )    ; Negative Cache TTL
+;
+```
+
+`SOA` stands for "start of authority".  It's a record the resolvers use to lookup a name recursively.  It's basically saying "any subdomain under `.srv.qiu.home`, ask `ns1.srv.qiu.home` to resolve its ip please".  I left the rest of the parameters as is from the bind9 template.
+
+Next, we define the `NS` records for the authoritative name server:
+
+```
+; name servers - NS records
+@    IN    NS    ns1
+@    IN    NS    ns2
+```
+
+This is basically saying when a `NS` query is issued (to find out what the authoritative name server for the zone is), use the provided DNS servers, which are `ns1.srv.qiu.home` and `ns2.srv.qiu.home`.
+
+Now, we need to define the `A` (address) records for `ns1` and `ns2`:
+
+```
+; name servers - A records
+ns1.srv.qiu.home.    IN    A    192.168.0.11
+ns2.srv.qiu.home.    IN    A    192.168.0.12
+```
+
+Finally, we can enumerate the name / ip mapping in the form of `A` records for the rest of the hosts on our network:
+
+```
+; 192.168.0.0/16 - A records
+monarch.srv.qiu.home.    IN    A    192.168.200.61
+idaeus.srv.qiu.home.     IN    A    192.168.0.11
+nivalis.srv.qiu.home.    IN    A    192.168.0.12
+...
+```
+
+Now, go back to the `Corefile`.  We need to let CoreDNS know the zone file:
+
+```
+.:65353 {
+    ...
+    file zones/db.srv.qiu.home srv.qiu.home
+}
+```
+
+The first argument of `file` is the path to the zone file, and the second is the domain name of the zone.  Restart CoreDNS and let's try to resolve a host in the `.srv.qiu.home` domain:
+
+```
+dig @192.168.0.12 -p 65353 monarch.srv.qiu.home
+
+; <<>> DiG 9.10.3-P4-Ubuntu <<>> @192.168.0.12 -p 65353 monarch.srv.qiu.home
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 14036
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 2, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;monarch.srv.qiu.home.          IN      A
+
+;; ANSWER SECTION:
+monarch.srv.qiu.home.   604800  IN      A       192.168.200.61
+
+;; AUTHORITY SECTION:
+srv.qiu.home.           604800  IN      NS      ns1.srv.qiu.home.
+srv.qiu.home.           604800  IN      NS      ns2.srv.qiu.home.
+
+;; Query time: 3 msec
+;; SERVER: 192.168.0.12#65353(192.168.0.12)
+;; WHEN: Thu Apr 19 00:56:42 EDT 2018
+;; MSG SIZE  rcvd: 101
+```
+
+Success!
+
+Setup Reverse Records
+---------------------
+
+Our job is done upon completion of the previous step.  However, to make a zone complete, we also need to provide a reverse mapping file so reverse lookup also works.
+
+By reverse lookup, I mean our DNS server should be able to answer the question "what domain name is associated with the IP 192.168.200.61?" for example.
+
+Because my home network is using `192.168.0.0/24` CIDR block, we need to create a zone file `db.192.168`:
+
+```
+$TTL    604800
+@    IN    SOA    ns1.srv.qiu.home. admin.srv.qiu.home. (
+                  3        ; Serial
+             604800        ; Refresh
+              86400        ; Retry
+            2419200        ; Expire
+             604800 )    ; Negative Cache TTL
+;
+
+; name servers - NS records
+
+@   IN    NS    ns1.srv.qiu.home.
+
+; PTR records
+
+11.0      IN  PTR ns1.srv.qiu.home.
+12.0      IN  PTR ns2.srv.qiu.home.
+61.200    IN  PTR monarch.srv.qiu.home.
+11.0      IN  PTR idaeus.srv.qiu.home.
+12.0      IN  PTR nivalis.srv.qiu.home.
+```
+
+This is very similar to the forward zone file, except that instead of providing `A` records to map domain name to IP addresses, we use `PTR` records to provide the reverse functionality.
+
+After this is created, we also have to hook it up with `Corefile`:
+
+```
+.:65353 {
+    ...
+    file zones/db.192.168      168.192.in-addr.arpa
+}
+```
+
+`168.192.in-addr.arpa` is the reverse zone.  Notice that the first two octet of our network CIDR is reversed as well (`168.192`).  After the update, restart coredns again.
+
+Let's do a reverse lookup using dig:
+
+```
+dig -x 192.168.200.61
+
+; <<>> DiG 9.10.3-P4-Ubuntu <<>> -x 192.168.200.61
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 47344
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;61.200.168.192.in-addr.arpa.   IN      PTR
+
+;; ANSWER SECTION:
+61.200.168.192.in-addr.arpa. 604800 IN  PTR     monarch.srv.qiu.home.
+
+;; Query time: 4 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53)
+;; WHEN: Thu Apr 19 01:05:25 EDT 2018
+;; MSG SIZE  rcvd: 90
+```
+
+There we go!  It was able to successfully identify that `monarch.srv.qiu.home` is the domain name for IP address `192.168.200.61`.
+
+Ansiblization
+-------------
+
+OK, that's basically it.  However, in the spirit of infrastructure as code (and save my future headache), I had to ansiblize this process.
+A couple of things worth noting:
+* A [service unit file](https://github.com/kevinjqiu/home.idempotent.io/blob/master/roles/coredns/files/coredns.service) has to be written for CoreDNS because we're targeting systemd
+* I used an unprivileged user `coredns` to run the coredns
+* An unprivileged user isn't able to bind a service to port 53.  I can't hold my nose and run `coredns` as `root`, so the `coredns` binary needs to [have the capability to bind to port 53](https://github.com/kevinjqiu/home.idempotent.io/blob/master/roles/coredns/tasks/main.yml#L23-L27).
+
+If anyone is interested, the playbook role is [here](https://github.com/kevinjqiu/home.idempotent.io/tree/master/roles/coredns).
+
+
+Conclusion
+----------
+
+Having setting up the hosted zone on both bind9 and CoreDNS, I have to say CoreDNS is a lot simpler.  Maybe it became simpler because I had prior experience having gone through the bind9 tutorial, but in CoreDNS, the configuration is much less than bind9.  I also like the plugin system where you can pick and choose what features you want to be present in the server (e.g., I enabled Prometheus plugin so I can have my Prometheus instance monitor the health of the DNS server).  The plugin system also makes it possible to have different backends.  I think my next step for this project is to serve the zone records from an etcd cluster instead of a static file!
