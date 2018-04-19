@@ -316,6 +316,7 @@ Ansiblization
 
 OK, that's basically it.  However, in the spirit of infrastructure as code (and save my future headache), I had to ansiblize this process.
 A couple of things worth noting:
+
 * A [service unit file](https://github.com/kevinjqiu/home.idempotent.io/blob/master/roles/coredns/files/coredns.service) has to be written for CoreDNS because we're targeting systemd
 * I used an unprivileged user `coredns` to run the coredns
 * An unprivileged user isn't able to bind a service to port 53.  I can't hold my nose and run `coredns` as `root`, so the `coredns` binary needs to [have the capability to bind to port 53](https://github.com/kevinjqiu/home.idempotent.io/blob/master/roles/coredns/tasks/main.yml#L23-L27).
