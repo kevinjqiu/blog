@@ -1,7 +1,7 @@
 ---
 title: "Run Your Own Home DNS on coredns"
 date: 2018-04-18T23:09:59-04:00
-draft: true
+categories: ["devops", "dns"]
 ---
 
 I have been running my home DNS on a pair of RaspberryPi's for some time now.  The main reason for running my own DNS server is to utilize the excellent [pihole](https://pi-hole.net/) project to block 3rd-party ads from being served to my home network.
