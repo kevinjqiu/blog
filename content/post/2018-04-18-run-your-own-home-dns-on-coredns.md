@@ -28,7 +28,7 @@ Just like Caddy, CoreDNS is designed to be extensible with [plugins](https://cor
 The Big Picture
 ---------------
 
-[![The Big Picture]](big-picture.png)
+{{< figure src="/images/big-picture.png" title="The Big Picture" >}}
 
 We instruct the router to set client's resolver to the RaspberryPi's IP addresses.  The `.0.11` is used as the primary resolver and `.0.12` is the secondary.  Clients (meaning computers/laptops/cell phones/tablets) connected to the router through DHCP are assigned an ip address and given the RaspberryPi's IP addresses as the resolvers.
 
