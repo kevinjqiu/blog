@@ -1,7 +1,7 @@
 ---
 title: "Heartbeat-style Failure Detector using Gossip"
 date: 2018-08-21T23:32:00-04:00
-draft: true
+draft: false
 ---
 
 I recently started part-time Master's degree at University of Illinois Urbana-Champaign.  It has been on my bucket list for a long time, and I finally got the chance to do it.
