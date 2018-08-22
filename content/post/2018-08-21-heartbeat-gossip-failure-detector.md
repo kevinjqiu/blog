@@ -102,6 +102,7 @@ It's a simple Python class to store `id`, `last_heartbeat`, `last_timestamp` and
 The `MemberInfo` class has a few methods to update its attributes in a thread-safe way.
 
 We also need a data structure to represent a membership list:
+
 ```python
 class MembershipList:
     def __init__(self):
@@ -130,3 +131,230 @@ class MembershipList:
 ```
 
 The important method here is `update_all`, where an incoming membership list from another node needs to be "merged" with the membership list of the current node.
+
+As discussed, for simplicity reasons, we're just going to spin up a Flask API server with two endpoints: `GET /members` and `POST /members`.
+
+* `GET /members` will simply return the node's membership list in JSON format:
+
+```python
+@app.route('/members', methods=['GET'])
+def members():
+    return flask.jsonify(membership_list.json())
+```
+
+* `POST /members` receives the membership list from another node and update the node's membership list using `MembershipList::update_all` method.
+
+```
+@app.route('/members', methods=['POST'])
+def receive_heartbeat():
+    request_json = flask.request.json
+    membership_list.update_all(request_json)
+    return flask.jsonify({})
+```
+
+And finally, we need a task runner that runs a scheduled task at every `protocol_period` (e.g., 1s).  The task will:
+
+* increment its own heartbeat counter
+* move the peers it hasn't had a heartbeat exceeding the threshold to "suspected" state
+* remove the peers in suspected state which haven't had any heartbeats exceeding the threshold
+* randomly pick two peers to send this node's membership list to
+
+For the scheduler part, I just use the venerable [apscheduler](https://pypi.org/project/APScheduler/) package which is fairly easy to use:
+
+
+```python
+def tick():
+    # self heartbeat
+    membership_list.update_one(app.node_id,
+                               lambda member_info: member_info.increment_heartbeat())
+
+    membership_list.detect_suspected_nodes(app.suspicion_threshold_beats, app.protocol_period)
+    membership_list.remove_dead_nodes(app.failure_threshold_beats, app.protocol_period)
+
+    peers = membership_list.choose_peers(2, exclude=[app.node_id])
+    for peer in peers:
+        try:
+            response = requests.post('http://{}/members'.format(peer), json=membership_list.json())
+            logging.debug(response)
+        except requests.exceptions.ConnectionError:
+            pass
+```
+
+# Harness
+
+So these are the main components of the failure detector.  The next step is to write some harness code to simulate a cluster with these nodes running.
+
+For that, I use [pyinvoke](pyinvoke.org) which is a glorified Makefile.
+
+These are the tasks I have:
+
+* [`up`](https://github.com/kevinjqiu/failure_detector/blob/9d9d12ea8c389e1e4d19784af50c124d872e0a85/tasks.py#L90-L105) - bring up the cluster with 3 nodes having each other as peers.
+* [`add-node`](https://github.com/kevinjqiu/failure_detector/blob/9d9d12ea8c389e1e4d19784af50c124d872e0a85/tasks.py#L123-L136) - start up a node and pick a random node in the cluster as its peer. The full membership list will eventually be gossipped to this node.
+* [`list-members`](https://github.com/kevinjqiu/failure_detector/blob/9d9d12ea8c389e1e4d19784af50c124d872e0a85/tasks.py#L170-L180) - print out the membership list for every node in the cluster.
+* [`kill`](https://github.com/kevinjqiu/failure_detector/blob/9d9d12ea8c389e1e4d19784af50c124d872e0a85/tasks.py#L51-L72) - kill a random node (or a specific node) in the cluster. This simulates a node failure.
+
+# Demo
+
+Now we can tie them together and do a demo of how heartbeat-style failure detection works.
+
+## Start up a cluster of 5 nodes
+
+    $ inv up --size 3
+    Starting node: 127.0.1.1:36991 with peers 127.0.1.1:52326,127.0.1.1:36783
+    Starting node: 127.0.1.1:52326 with peers 127.0.1.1:36991,127.0.1.1:36783
+    Starting node: 127.0.1.1:36783 with peers 127.0.1.1:36991,127.0.1.1:52326
+
+## Verify that these nodes know about each other
+
+    inv list-members
+    Node: 127.0.1.1:36991
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:36991                31        1534962198  alive
+    127.0.1.1:52326                31        1534962198  alive
+    127.0.1.1:36783                31        1534962198  alive
+
+    Node: 127.0.1.1:52326
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:52326                31        1534962198  alive
+    127.0.1.1:36991                31        1534962198  alive
+    127.0.1.1:36783                31        1534962198  alive
+
+    Node: 127.0.1.1:36783
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:36783                31        1534962198  alive
+    127.0.1.1:36991                31        1534962198  alive
+    127.0.1.1:52326                31        1534962198  alive
+
+## Add a new node and show its members (initially it should only has itself and its initial peer)
+
+    $ inv add-node && sleep 1 && inv list-members
+    Starting node: 127.0.1.1:61586 with peers 127.0.1.1:36991
+
+    ...
+
+    Node: 127.0.1.1:61586
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:61586                 0        1534962309  alive
+    127.0.1.1:36991                 0        1534962309  alive
+
+## After a while, that node's presence is gossipped to all the nodes
+
+    $ inv list-members
+    Node: 127.0.1.1:36991
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:36991               210        1534962377  alive
+    127.0.1.1:52326               209        1534962377  alive
+    127.0.1.1:36783               209        1534962376  alive
+    127.0.1.1:61586                68        1534962377  alive
+
+    Node: 127.0.1.1:52326
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:52326               210        1534962377  alive
+    127.0.1.1:36991               210        1534962377  alive
+    127.0.1.1:36783               210        1534962377  alive
+    127.0.1.1:61586                68        1534962377  alive
+
+    Node: 127.0.1.1:36783
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:36783               210        1534962377  alive
+    127.0.1.1:36991               210        1534962377  alive
+    127.0.1.1:52326               209        1534962376  alive
+    127.0.1.1:61586                68        1534962377  alive
+
+    Node: 127.0.1.1:61586
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:61586                68        1534962377  alive
+    127.0.1.1:36991               210        1534962377  alive
+    127.0.1.1:52326               210        1534962377  alive
+    127.0.1.1:36783               210        1534962377  alive
+
+## Kill a random node, and watch it disappear from the membership list of other nodes
+
+The best way to do this is to have a terminal (or tmux panel) running `watch inv list-members` while run `inv kill` in another.
+
+    $ inv kill
+    Kill peer {'bind': '127.0.1.1:61586', 'pid': 21969}
+
+And observe in the other window:
+
+    Node: 127.0.1.1:36991
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  ---------
+    127.0.1.1:36991               557        1534962724  alive
+    127.0.1.1:52326               557        1534962724  alive
+    127.0.1.1:36783               557        1534962724  alive
+    127.0.1.1:61586               407        1534962716  suspected
+
+    Node: 127.0.1.1:52326
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  ---------
+    127.0.1.1:52326               557        1534962724  alive
+    127.0.1.1:36991               557        1534962724  alive
+    127.0.1.1:36783               555        1534962722  alive
+    127.0.1.1:61586               407        1534962716  suspected
+
+    Node: 127.0.1.1:36783
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  ---------
+    127.0.1.1:36783               557        1534962724  alive
+    127.0.1.1:36991               556        1534962723  alive
+    127.0.1.1:52326               557        1534962724  alive
+    127.0.1.1:61586               407        1534962716  suspected
+
+    Node: 127.0.1.1:61586
+    ================================================================
+    Node is down
+
+Notice the "suspected" status for the newly killed node.  After a while:
+
+    Node: 127.0.1.1:36991
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:36991               638        1534962805  alive
+    127.0.1.1:52326               638        1534962805  alive
+    127.0.1.1:36783               638        1534962805  alive
+
+    Node: 127.0.1.1:52326
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:52326               638        1534962805  alive
+    127.0.1.1:36991               638        1534962805  alive
+    127.0.1.1:36783               638        1534962805  alive
+
+    Node: 127.0.1.1:36783
+    ================================================================
+    id                 last_heartbeat    last_timestamp  status
+    ---------------  ----------------  ----------------  --------
+    127.0.1.1:36783               638        1534962805  alive
+    127.0.1.1:36991               638        1534962805  alive
+    127.0.1.1:52326               638        1534962805  alive
+
+    Node: 127.0.1.1:61586
+    ================================================================
+    Node is down
+
+The node `127.0.0.1:61586` is completely removed from the membership list of other nodes.
+
+
+I hope this demonstrates the aspects of a simple failure detector with gossip.  It certainly solidified my understanding of such topic while having fun building it :)
