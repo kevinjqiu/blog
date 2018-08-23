@@ -358,3 +358,7 @@ The node `127.0.0.1:61586` is completely removed from the membership list of oth
 
 
 I hope this demonstrates the aspects of a simple failure detector with gossip.  It certainly solidified my understanding of such topic while having fun building it :)
+
+# Watch the demo
+
+[![asciicast](https://asciinema.org/a/WA7oDFiBKk9DiSh5CPrpsB8f2.png)](https://asciinema.org/a/WA7oDFiBKk9DiSh5CPrpsB8f2)
